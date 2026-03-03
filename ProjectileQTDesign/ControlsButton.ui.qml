@@ -13,6 +13,7 @@ T.Button {
     id: buttonRoot
 
     property int status: ControlsButton.Status_1.Status_1_Default
+    property string buttonText: "me when ButtonText"
 
     height: 41
     width: 194
@@ -45,10 +46,10 @@ T.Button {
             font.pixelSize: 14
             font.weight: Font.DemiBold
             horizontalAlignment: Text.AlignHCenter
-            text: "Simulate"
+            text: buttonRoot.buttonText
             textFormat: Text.PlainText
             verticalAlignment: Text.AlignVCenter
-            wrapMode: Text.WordWrap
+            wrapMode: Text.NoWrap
         }
     }
 
@@ -75,7 +76,7 @@ T.Button {
                 target: label
             }
             PropertyChanges {
-                text: "Simulate"
+                text: buttonRoot.buttonText
             }
             PropertyChanges {
                 width: 59
@@ -102,7 +103,7 @@ T.Button {
             }
             PropertyChanges {
                 target: label
-                text: "Simulate"
+                text: buttonRoot.buttonText
             }
             PropertyChanges {
                 width: 57
@@ -125,7 +126,7 @@ T.Button {
             }
             PropertyChanges {
                 target: label
-                text: "Simulating"
+                text: buttonRoot.buttonText
             }
             PropertyChanges {
                 target: label

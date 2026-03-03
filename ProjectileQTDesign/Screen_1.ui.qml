@@ -14,6 +14,16 @@ Rectangle {
     clip: true
     color: "#ffffff"
 
+    Connections {
+        target: game
+
+        function onProjectilePositionChanged(NewX, NewY, NewRotation) {
+            rocket.x = NewX
+            rocket.y = NewY
+            rocket.rotation = -NewRotation
+        }
+    }
+
     Item {
         id: gameElements
 
