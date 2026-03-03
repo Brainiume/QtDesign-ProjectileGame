@@ -1,0 +1,17 @@
+// prop: json-converted
+// prop: auto-generated
+
+import QmlProject
+
+Project {
+    enableCMakeGeneration: false
+    enablePythonGeneration: true
+    widgetApp: false
+
+    qt6Project: true
+    qtForMCUs: false
+
+    QmlFiles {
+        directory: "."
+    }
+}

@@ -1,0 +1,81 @@
+// prop: json-converted
+// prop: auto-generated
+
+import QmlProject
+
+Project {
+    mainFile: "Screen_1.ui.qml"
+    enablePythonGeneration: true
+    widgetApp: false
+    importPaths: [ "." ]
+
+    qt6Project: true
+    qtForMCUs: false
+
+    QmlFiles {
+        files: [
+            "ControlsButton.ui.qml",
+            "Screen_1.ui.qml",
+            "Launch.ui.qml",
+            "Image_2.ui.qml",
+            "Launch_1.ui.qml",
+            "Launch_2.ui.qml",
+            "Launch_3.ui.qml",
+            "BarBusyIndicator.qml"
+        ]
+    }
+
+    ImageFiles {
+        files: [
+            "assets/launch_1.png",
+            "assets/launch_1@2x.png",
+            "assets/launch_2.png",
+            "assets/launch_2@2x.png",
+            "assets/launch_3.png",
+            "assets/launch_3@2x.png",
+            "assets/divider.png",
+            "assets/divider@2x.png",
+            "assets/launch.png",
+            "assets/launch@2x.png",
+            "assets/launch_7.png",
+            "assets/launch_7@2x.png",
+            "assets/launch_6.png",
+            "assets/launch_6@2x.png",
+            "assets/launch_5.png",
+            "assets/launch_5@2x.png",
+            "assets/launch_4.png",
+            "assets/launch_4@2x.png",
+            "assets/level1_1.png",
+            "assets/level1_1@2x.png",
+            "assets/sky.png",
+            "assets/sky@2x.png",
+            "assets/ellipse_1.png",
+            "assets/ellipse_1@2x.png",
+            "assets/image_2.png",
+            "assets/image_2@2x.png",
+            "assets/launch_8.png",
+            "assets/launch_8@2x.png",
+            "assets/launch_9.png",
+            "assets/launch_9@2x.png",
+            "assets/launch_10.png",
+            "assets/launch_10@2x.png",
+            "assets/Rocket.png",
+            "assets/RedTitle.svg"
+        ]
+    }
+
+    FontFiles {
+        files: [
+            "fonts/inter-semibold.ttf",
+            "fonts/InterstateRegular.otf"
+        ]
+    }
+
+    ModuleFiles {
+        files: [
+            "DesignTokens/DesignTokens.qmlproject"
+        ]
+    }
+
+    mainUiFile: "BarBusyIndicator.ui.qml"
+}
