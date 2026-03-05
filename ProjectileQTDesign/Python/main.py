@@ -9,6 +9,7 @@ def main():
     app = QGuiApplication(sys.argv)
     engine = QQmlApplicationEngine()
 
+
     # Get path to this Python file
     current_dir = os.path.dirname(os.path.abspath(__file__))
 

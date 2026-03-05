@@ -5,6 +5,8 @@ from Tools.demo import vector
 from PhysicsEngine import *
 from LevelInitialisation import *
 
+import os
+
 class GameController(QObject):
 
     velocityChanged = Signal()
@@ -12,16 +14,24 @@ class GameController(QObject):
     gravityChanged = Signal()
     simulateEnabledChanged = Signal()
     projectilePositionChanged: Signal = Signal(float, float, float)
+    debugBoxesChanged = Signal(list)
 
     def __init__(self):
         super().__init__()
+        self._screenheight = 832
         self._velocity = 0.0
         self._angle = 90.0
         self._gravity = -9.8
         self._simulateEnabled = True
         self.simulation = PhysicsSimulation()
+        self.LevelMan = LevelInitialisation()
         self.timer = QTimer()
         self.timer.timeout.connect(self.updatePhysics)
+
+
+        self.base_dir = os.path.dirname(os.path.abspath(__file__))
+        #self._CurrentLevel =
+        #self.file_path = os.path.join(base_dir, "Levels")
 
     @Property(float, notify=velocityChanged)
     def velocity(self):
@@ -34,6 +44,10 @@ class GameController(QObject):
         self._velocity = value
         print("velocity: " + str(value))
         self.velocityChanged.emit()
+
+    @Slot(int)
+    def setScreenHeight(self, height):
+        self.simulation.screenHeight = height
 
     @Property(float, notify=angleChanged)
     def angle(self):
@@ -77,19 +91,35 @@ class GameController(QObject):
         print("Gravity:", gravity)
         self.setSimulateEnabled(False)
 
-        self.simulation.space.gravity = (0, gravity*100)
-        self.simulation.start(velocity * 100, angle)
+        self.simulation.reset_space()
+        #Get Level Json and send to Physics Engine to parse
+        self.simulation.build_level(self.LevelMan.load())
+
+        self.simulation.space.gravity = (0, -gravity*100)
+        self.simulation.start(-velocity * 100, angle)
 
         self.timer.start(16)
 
+    @Slot(str)
+    def saveLevelDev(self, leveldata):
+        self.LevelMan.saveLevelDev(leveldata)
 
     def updatePhysics(self):
         x, y = self.simulation.step(1/60)
 
+        boxes = self.simulation.get_debug_boxes()
+        self.debugBoxesChanged.emit(boxes)
+
         pos = self.simulation.body.position
         vel = self.simulation.body.velocity
 
-        angle_rad = math.atan2(vel.y, vel.x)
-        angle_deg = math.degrees(angle_rad - 90)
+        angle = math.degrees(math.atan2(vel.y, vel.x) - math.pi/2)
+        self.simulation.body.angle = angle # this is ver broke 
 
-        self.projectilePositionChanged.emit(x, 600 - y, angle_deg)
+        rocket_w = 57
+        rocket_h = 142
+
+        qml_x = pos.x - rocket_w / 2
+        qml_y = pos.y - rocket_h / 2
+
+        self.projectilePositionChanged.emit(qml_x, qml_y, angle)

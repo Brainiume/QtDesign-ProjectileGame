@@ -14,6 +14,8 @@ Rectangle {
     clip: true
     color: "#ffffff"
 
+    property var debugBoxes: []
+
     Connections {
         target: game
 
@@ -21,6 +23,11 @@ Rectangle {
             rocket.x = NewX
             rocket.y = NewY
             rocket.rotation = -NewRotation
+        }
+
+        function onDebugBoxesChanged(boxes) {
+            console.log("Boxes received:", boxes.length)
+            debugBoxes = boxes
         }
     }
 
@@ -61,9 +68,15 @@ Rectangle {
 
         MyRocket {
             id: rocket
-            x: 128
-            y: 470
+            x: 127
+            y: 447
             rotation: angleDial.value.toFixed(0) - 90
+
+            Behavior on rotation {
+                NumberAnimation {
+                    duration: 80
+                }
+            }
         }
     }
     Item {
@@ -511,6 +524,10 @@ Rectangle {
 
                 x: 627
                 y: 65
+
+                buttonText: "Simulate"
+                buttonTextPressed: "Simulate"
+                buttonTextDisabled: "Simulating"
                 enabled: game.simulateEnabled
 
                 Connections {
@@ -558,6 +575,7 @@ Rectangle {
                 snapMode: RangeSlider.SnapAlways
                 stepSize: 0.1
                 to: 10
+                from: 0
                 onValueChanged: game.velocity = value
 
                 background: Rectangle {
@@ -733,6 +751,27 @@ Rectangle {
             blur: 9
         }
     }
+    Item {
+        id: debugLayer
+        anchors.fill: parent
+        z: 5
+
+        Repeater {
+            model: debugBoxes
+
+            Rectangle {
+                x: modelData.x
+                y: modelData.y
+                width: modelData.width
+                height: modelData.height
+                rotation: modelData.Rotation
+                color: "transparent"
+                border.color: "red"
+                border.width: 2
+            }
+        }
+    }
+
     Item {
         id: topBarContainer
 

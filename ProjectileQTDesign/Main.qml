@@ -4,7 +4,7 @@ import QtQuick.Controls.Basic
 
 
 ApplicationWindow {
-
+    id: approot
     width: 1280
     height: 832
     visible: true
@@ -14,4 +14,7 @@ ApplicationWindow {
         anchors.fill: parent
     }
 
+    Component.onCompleted: {
+        game.setScreenHeight(approot.height)
+    }
 }

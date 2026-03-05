@@ -17,6 +17,7 @@ Image {
             y: 189
             width: 456
             height: 262
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -27,6 +28,7 @@ Image {
             y: 154
             width: 154
             height: 297
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -37,6 +39,7 @@ Image {
             y: 41
             width: 186
             height: 410
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -47,6 +50,7 @@ Image {
             y: 189
             width: 75
             height: 262
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -57,6 +61,7 @@ Image {
             y: 342
             width: 110
             height: 109
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -67,6 +72,7 @@ Image {
             y: 377
             width: 87
             height: 74
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -77,6 +83,7 @@ Image {
             y: 342
             width: 40
             height: 109
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -87,6 +94,7 @@ Image {
             y: 192
             width: 186
             height: 259
+            visible: false
             color: "#7aff0000"
             property string hitboxType: "collisionBox"
         }
@@ -97,6 +105,7 @@ Image {
             y: 67
             width: 60
             height: 127
+            visible: false
             color: "#02ff00"
             property string hitboxType: "targetBox"
         }
@@ -107,6 +116,7 @@ Image {
             y: 218
             width: 232
             height: 176
+            visible: false
             color: "#abff00ee"
             property string hitboxType: "killBox"
         }
@@ -116,6 +126,7 @@ Image {
         id: controlsButton
         x: 155
         y: 41
+        visible: false
         buttonText: "Export Level"
 
         Connections {
@@ -136,9 +147,10 @@ Image {
                         continue
                     }
 
+                    var pos = item.mapToItem(null, 0, 0)
                     var box = {
-                        "x": item.x,
-                        "y": item.y,
+                        "x": pos.x,
+                        "y": pos.y,
                         "width": item.width,
                         "height": item.height
                     }
@@ -158,7 +170,7 @@ Image {
                     }
                 }
 
-                game.saveLevel(JSON.stringify(levelData))
+                game.saveLevelDev(JSON.stringify(levelData))
             }
         }
     }

@@ -14,6 +14,8 @@ T.Button {
 
     property int status: ControlsButton.Status_1.Status_1_Default
     property string buttonText: "me when ButtonText"
+    property string buttonTextPressed: "me when ButtonText pressed"
+    property string buttonTextDisabled: "me when disabled"
 
     height: 41
     width: 194
@@ -103,7 +105,7 @@ T.Button {
             }
             PropertyChanges {
                 target: label
-                text: buttonRoot.buttonText
+                text: buttonRoot.buttonTextPressed
             }
             PropertyChanges {
                 width: 57
@@ -126,7 +128,7 @@ T.Button {
             }
             PropertyChanges {
                 target: label
-                text: buttonRoot.buttonText
+                text: buttonRoot.buttonTextDisabled
             }
             PropertyChanges {
                 target: label
