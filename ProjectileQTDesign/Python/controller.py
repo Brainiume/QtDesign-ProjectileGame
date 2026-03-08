@@ -138,7 +138,8 @@ class GameController(QObject):
             angle = math.degrees(math.atan2(vel.y, vel.x) - math.pi / 2)
             self.LastAngle = angle
         else:
-            angle = self.LastAngle
+            #angle = self.LastAngle
+            angle = math.degrees(self.simulation.body.angle)
 
         #self.simulation.body.angle = angle # this is ver broke
 

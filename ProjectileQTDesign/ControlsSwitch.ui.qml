@@ -18,6 +18,7 @@ T.Switch {
 
     property int check: ControlsSwitch.Check_1.Check_1_Off
     property int status: ControlsSwitch.Status_1.Status_1_Default
+    property bool hitboxEnabled: false
 
     height: 16
     width: 32
@@ -59,6 +60,10 @@ T.Switch {
                 target: game
                 debugBoxEnabled: false
             }
+            PropertyChanges {
+                target: switchRoot
+                hitboxEnabled: false
+            }
         },
         State {
             name: "Status=Default, Check=On"
@@ -78,11 +83,21 @@ T.Switch {
                 target: game
                 debugBoxEnabled: true
             }
+
+            PropertyChanges {
+                target: switchRoot
+                hitboxEnabled: true
+            }
         },
         State {
             name: "Status=Hovered, Check=Off"
             when: switchRoot.status === ControlsSwitch.Status_1.Status_1_Hovered
                   && switchRoot.check === ControlsSwitch.Check_1.Check_1_Off
+
+            PropertyChanges {
+                target: game
+                debugBoxEnabled: false
+            }
         },
         State {
             name: "Status=Hovered, Check=On"
@@ -97,6 +112,11 @@ T.Switch {
                 x: 18
 
                 target: indicator
+            }
+
+            PropertyChanges {
+                target: game
+                debugBoxEnabled: true
             }
         },
         State {
@@ -139,6 +159,11 @@ T.Switch {
                 color: "#aeaeae"
                 target: indicator
             }
+
+            PropertyChanges {
+                target: game
+                debugBoxEnabled: switchRoot.hitboxEnabled
+            }
         },
         State {
             name: "Status=Disabled, Check=On"
@@ -157,6 +182,11 @@ T.Switch {
             PropertyChanges {
                 color: "#aeaeae"
                 target: indicator
+            }
+
+            PropertyChanges {
+                target: game
+                debugBoxEnabled: switchRoot.hitboxEnabled
             }
         }
     ]
