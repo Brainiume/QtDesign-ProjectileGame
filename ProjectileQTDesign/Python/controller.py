@@ -13,6 +13,7 @@ class GameController(QObject):
     angleChanged = Signal()
     gravityChanged = Signal()
     simulateEnabledChanged = Signal()
+    debugBoxEnabledChanged = Signal()
     projectilePositionChanged: Signal = Signal(float, float, float)
     debugBoxesChanged = Signal(list)
 
@@ -23,10 +24,12 @@ class GameController(QObject):
         self._angle = 90.0
         self._gravity = -9.8
         self._simulateEnabled = True
+        self._debugBoxEnabled = False
         self.simulation = PhysicsSimulation()
         self.LevelMan = LevelInitialisation()
         self.timer = QTimer()
         self.timer.timeout.connect(self.updatePhysics)
+        self.LastAngle = 0.0
 
 
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -77,12 +80,25 @@ class GameController(QObject):
     def simulateEnabled(self):
         return self._simulateEnabled
 
-
     def setSimulateEnabled(self, value):
         if self._simulateEnabled == value:
             return
         self._simulateEnabled = value
         self.simulateEnabledChanged.emit()
+
+    @Slot(bool)
+    def setDebugBoxEnabled(self, value):
+        if self._debugBoxEnabled == value:
+            return
+
+        self._debugBoxEnabled = value
+        self.debugBoxEnabledChanged.emit()
+
+    @Property(bool, fset=setDebugBoxEnabled, notify=debugBoxEnabledChanged)
+    def debugBoxEnabled(self):
+        return self._debugBoxEnabled
+
+
 
     @Slot(float, float, float)
     def startSimulation(self, velocity, angle, gravity):
@@ -94,15 +110,20 @@ class GameController(QObject):
         self.simulation.reset_space()
         #Get Level Json and send to Physics Engine to parse
         self.simulation.build_level(self.LevelMan.load())
+        self.simulation.create_projectile_shape(self.LevelMan.loadProjectile())
 
-        self.simulation.space.gravity = (0, -gravity*100)
-        self.simulation.start(-velocity * 100, angle)
+        self.simulation.space.gravity = (0, gravity * 100)
+        self.simulation.start(velocity * 100, angle)
 
         self.timer.start(16)
 
     @Slot(str)
     def saveLevelDev(self, leveldata):
         self.LevelMan.saveLevelDev(leveldata)
+
+    @Slot(str)
+    def saveProjectileHitbox(self, hitboxdata):
+        self.LevelMan.saveProjectileHitbox(hitboxdata)
 
     def updatePhysics(self):
         x, y = self.simulation.step(1/60)
@@ -113,13 +134,18 @@ class GameController(QObject):
         pos = self.simulation.body.position
         vel = self.simulation.body.velocity
 
-        angle = math.degrees(math.atan2(vel.y, vel.x) - math.pi/2)
-        self.simulation.body.angle = angle # this is ver broke 
+        if vel.length > 50:
+            angle = math.degrees(math.atan2(vel.y, vel.x) - math.pi / 2)
+            self.LastAngle = angle
+        else:
+            angle = self.LastAngle
+
+        #self.simulation.body.angle = angle # this is ver broke
 
         rocket_w = 57
         rocket_h = 142
 
         qml_x = pos.x - rocket_w / 2
-        qml_y = pos.y - rocket_h / 2
+        qml_y = self.simulation.screenHeight - pos.y - rocket_h / 2
 
         self.projectilePositionChanged.emit(qml_x, qml_y, angle)

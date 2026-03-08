@@ -36,6 +36,7 @@
         <file>assets/sky@2x.png</file>
         <file>BarBusyIndicator.qml</file>
         <file>ControlsButton.ui.qml</file>
+        <file>ControlsSwitch.ui.qml</file>
         <file>DesignTokens/DesignTokens.qmlproject</file>
         <file>fonts/inter-semibold.ttf</file>
         <file>fonts/InterstateRegular.otf</file>
@@ -44,6 +45,7 @@
         <file>Launch_1.ui.qml</file>
         <file>Launch_2.ui.qml</file>
         <file>Launch_3.ui.qml</file>
+        <file>MoreInfoDropdown.ui.qml</file>
         <file>Projectile_Game.qmlproject</file>
         <file>Screen_1.ui.qml</file>
     </qresource>

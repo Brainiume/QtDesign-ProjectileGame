@@ -54,6 +54,12 @@ Rectangle {
             width: 1280
 
             clip: true
+
+            MoreInfoDropdown {
+                id: moreInfoDropdown
+                x: 974
+                y: 88
+            }
         }
 
         MyLevel1_1 {
@@ -424,106 +430,16 @@ Rectangle {
                     }
                 }
             }
-            Rectangle {
+            Title {
                 id: launch_6
-
                 x: 562
                 y: 9
-
-                height: 37
-                width: 314
-
-                clip: true
-                color: "#212741"
-                radius: 9
-
-                Image {
-                    id: launch_7
-
-                    source: Qt.resolvedUrl("assets/launch_7.png")
-                    fillMode: Image.Stretch
-                }
-                Item {
-                    id: sync_4
-
-                    height: 0
-                    width: 0
-
-                    Rectangle {
-                        id: bounding_box_3
-
-                        height: 0
-                        width: 0
-
-                        color: "#d9d9d9"
-                    }
-                    Shape {
-                        id: _vector_2
-
-                        height: 0
-                        width: 0
-
-                        ShapePath {
-                            id: _vector_2_ShapePath0
-
-                            fillColor: "#e3e3e3"
-                            fillRule: ShapePath.WindingFill
-                            joinStyle: ShapePath.MiterJoin
-                            strokeColor: "#00000000"
-                            strokeStyle: ShapePath.SolidLine
-                            strokeWidth: 0.03
-
-                            PathSvg {
-                                id: _vector_2_ShapePath0_PathSvg0
-
-                                path: "M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z M 0 0 L 0 0 L 0 0 L 0 0 L 0 0 Z"
-                            }
-                        }
-                    }
-                }
-                Item {
-                    id: textContainer_3
-
-                    x: 58
-                    y: 8
-
-                    height: 21
-                    width: 198
-
-                    clip: true
-
-                    Item {
-                        id: frame_4
-
-                        x: 6
-
-                        height: 21
-                        width: 186
-
-                        Text {
-                            id: title_3
-
-                            height: 21
-                            width: 187
-
-                            color: "#ffffff"
-                            font.capitalization: Font.AllUppercase
-                            font.family: "Interstate"
-                            font.pixelSize: 15
-                            font.weight: Font.Normal
-                            horizontalAlignment: Text.AlignHCenter
-                            text: "Simulation Controls"
-                            textFormat: Text.PlainText
-                            verticalAlignment: Text.AlignVCenter
-                        }
-                    }
-                }
             }
             ControlsButton {
                 id: controlsButton
 
-                x: 627
-                y: 65
+                x: 562
+                y: 60
 
                 buttonText: "Simulate"
                 buttonTextPressed: "Simulate"
@@ -544,8 +460,8 @@ Rectangle {
             BarBusyIndicator {
                 anchors.centerIn: parent
                 visible: !game.simulateEnabled
-                anchors.verticalCenterOffset: 52
-                anchors.horizontalCenterOffset: 280
+                anchors.verticalCenterOffset: 47
+                anchors.horizontalCenterOffset: 215
             }
 
             Dial {
@@ -742,6 +658,25 @@ Rectangle {
                 clip: true
                 antialiasing: true
             }
+
+            ControlsButton {
+                id: controlsButton1
+                x: 562
+                y: 60
+                enabled: game.simulateEnabled
+                Connections {
+                    target: controlsButton1
+                    function onClicked() {
+                        controlsButton1.state = "Status=Pressed"
+                        game.startSimulation(velocitySlider.value,
+                                             angleDial.value,
+                                             gravitySlider.value)
+                    }
+                }
+                buttonTextPressed: "Simulate"
+                buttonTextDisabled: "Simulating"
+                buttonText: "Simulate"
+            }
         }
 
         MultiEffect {
@@ -753,6 +688,7 @@ Rectangle {
     }
     Item {
         id: debugLayer
+        visible: game.debugBoxEnabled
         anchors.fill: parent
         z: 5
 
@@ -764,6 +700,7 @@ Rectangle {
                 y: modelData.y
                 width: modelData.width
                 height: modelData.height
+                transformOrigin: Item.Center
                 rotation: modelData.Rotation
                 color: "transparent"
                 border.color: "red"
@@ -778,7 +715,7 @@ Rectangle {
         height: 90
         width: 1280
 
-        clip: true
+        clip: false
 
         Item {
             id: leftTab
@@ -1227,7 +1164,7 @@ Rectangle {
             height: 90
             width: 366
 
-            clip: true
+            clip: false
 
             Rectangle {
                 id: scoreLevel_1
