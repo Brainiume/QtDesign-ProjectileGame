@@ -15,20 +15,37 @@ Rectangle {
     color: "#ffffff"
 
     property var debugBoxes: []
+    property real displayedVelocity: 0
+    property real latestVelocity: 0
+
+    Behavior on displayedVelocity {
+        NumberAnimation {
+            duration: 200
+        }
+    }
 
     Connections {
         target: game
 
-        function onProjectilePositionChanged(NewX, NewY, NewRotation) {
+        function onProjectilePositionChanged(NewX, NewY, NewRotation, Velocity) {
             rocket.x = NewX
             rocket.y = NewY
             rocket.rotation = -NewRotation
+            latestVelocity = Velocity
         }
 
         function onDebugBoxesChanged(boxes) {
             console.log("Boxes received:", boxes.length)
             debugBoxes = boxes
         }
+    }
+
+    Timer {
+        interval: 150
+        repeat: true
+        running: true
+
+        onTriggered: displayedVelocity = latestVelocity
     }
 
     Item {
@@ -435,33 +452,12 @@ Rectangle {
                 x: 562
                 y: 9
             }
-            ControlsButton {
-                id: controlsButton
-
-                x: 562
-                y: 60
-
-                buttonText: "Simulate"
-                buttonTextPressed: "Simulate"
-                buttonTextDisabled: "Simulating"
-                enabled: game.simulateEnabled
-
-                Connections {
-                    target: controlsButton
-                    function onClicked() {
-                        controlsButton.state = "Status=Pressed"
-                        game.startSimulation(velocitySlider.value,
-                                             angleDial.value,
-                                             gravitySlider.value)
-                    }
-                }
-            }
 
             BarBusyIndicator {
                 anchors.centerIn: parent
                 visible: !game.simulateEnabled
                 anchors.verticalCenterOffset: 47
-                anchors.horizontalCenterOffset: 215
+                anchors.horizontalCenterOffset: 240
             }
 
             Dial {
@@ -471,6 +467,7 @@ Rectangle {
                 width: 86
                 height: 86
                 value: game.angle
+                wheelEnabled: true
                 inputMode: Dial.Circular
                 stepSize: 1
                 snapMode: Dial.SnapAlways
@@ -490,7 +487,7 @@ Rectangle {
                 value: 1
                 snapMode: RangeSlider.SnapAlways
                 stepSize: 0.1
-                to: 10
+                to: 20
                 from: 0
                 onValueChanged: game.velocity = value
 
@@ -661,7 +658,7 @@ Rectangle {
 
             ControlsButton {
                 id: controlsButton1
-                x: 562
+                x: 587
                 y: 60
                 enabled: game.simulateEnabled
                 Connections {
@@ -676,6 +673,12 @@ Rectangle {
                 buttonTextPressed: "Simulate"
                 buttonTextDisabled: "Simulating"
                 buttonText: "Simulate"
+            }
+
+            ReloadButton {
+                id: reloadButton1
+                x: 803
+                y: 62
             }
         }
 
@@ -848,10 +851,11 @@ Rectangle {
         Item {
             id: middleTab
 
-            x: 376
+            x: 308
+            y: 0
 
             height: 90
-            width: 528
+            width: 740
 
             clip: true
 
@@ -862,10 +866,11 @@ Rectangle {
                 y: 16
 
                 height: 58
+                opacity: 1
                 width: 155
 
                 clip: true
-                color: "#e5212741"
+                color: "#e6212741"
                 radius: 10
 
                 Item {
@@ -886,6 +891,7 @@ Rectangle {
                         y: 2.17
 
                         height: 21.67
+                        antialiasing: true
                         width: 19.50
 
                         ShapePath {
@@ -935,6 +941,7 @@ Rectangle {
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignTop
                     }
+
                     Text {
                         id: currentVelocity_1
 
@@ -949,7 +956,7 @@ Rectangle {
                         font.pixelSize: 15
                         font.weight: Font.Normal
                         horizontalAlignment: Text.AlignLeft
-                        text: "42 m/s"
+                        text: screen.displayedVelocity.toFixed(1) + " m/s"
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -986,6 +993,7 @@ Rectangle {
                         y: 2.25
 
                         height: 22.50
+                        antialiasing: true
                         width: 22.50
 
                         ShapePath {
@@ -1049,7 +1057,9 @@ Rectangle {
                         font.pixelSize: 15
                         font.weight: Font.Normal
                         horizontalAlignment: Text.AlignLeft
-                        text: "45° @ 60m/s"
+                        text: angleDial.value.toFixed(
+                                  0) + "° @ " + velocitySlider.value.toFixed(
+                                  1) + " m/s"
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -1086,6 +1096,7 @@ Rectangle {
                         y: 2.25
 
                         height: 22.50
+                        antialiasing: true
                         width: 22.50
 
                         ShapePath {
@@ -1142,18 +1153,106 @@ Rectangle {
                         y: 21
 
                         height: 17
-                        width: 111
+                        width: 70
 
                         color: "#92ff92"
                         font.family: "Interstate"
                         font.pixelSize: 15
                         font.weight: Font.Normal
                         horizontalAlignment: Text.AlignLeft
-                        text: "9.8 m/s"
+                        text: gravitySlider.value.toFixed(1) + " m/s"
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
+            }
+
+            Rectangle {
+                id: gravity1
+                x: 527
+                y: 16
+                width: 194
+                height: 58
+                color: "#e5212741"
+                radius: 10
+                Item {
+                    id: globe1
+                    x: 15
+                    y: 15.5
+                    width: 27
+                    height: 27
+
+                    VectorImage {
+                        id: image1
+                        x: 0
+                        y: 0
+                        width: 27
+                        height: 27
+                        source: "assets/Wind.svg"
+                        preferredRendererType: VectorImage.CurveRenderer
+                        antialiasing: true
+                        smooth: true
+                        fillMode: Image.PreserveAspectFit
+                    }
+                    clip: true
+                }
+
+                Item {
+                    id: textContainer_7
+                    x: 52
+                    y: 10
+                    width: 76
+                    height: 38
+                    Text {
+                        id: title_9
+                        x: 1
+                        y: 0
+                        width: 66
+                        height: 21
+                        color: "#ffffff"
+                        text: "Wind"
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignLeft
+                        verticalAlignment: Text.AlignTop
+                        textFormat: Text.PlainText
+                        font.weight: Font.Bold
+                        font.family: "Interstate"
+                        font.capitalization: Font.AllUppercase
+                    }
+
+                    Text {
+                        id: gravity_2
+                        x: 1
+                        y: 21
+                        width: 66
+                        height: 17
+                        color: "#92ff92"
+                        text: game.windVelocity.toFixed(1) + " m/s"
+                        font.pixelSize: 15
+                        horizontalAlignment: Text.AlignLeft
+                        verticalAlignment: Text.AlignVCenter
+                        textFormat: Text.PlainText
+                        font.weight: Font.Normal
+                        font.family: "Interstate"
+                    }
+                    clip: true
+                }
+
+                VectorImage {
+                    id: image2
+                    x: 138
+                    y: 11
+                    width: 32
+                    height: 33
+                    source: "assets/Arrow.svg"
+                    rotation: game.windAngle
+                    preferredRendererType: VectorImage.CurveRenderer
+                    smooth: true
+                    antialiasing: true
+                    fillMode: Image.PreserveAspectFit
+                }
+
+                clip: true
             }
         }
         Item {
@@ -1256,3 +1355,6 @@ iNFO"
         id: __materialLibrary__
     }
 }
+
+
+

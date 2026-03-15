@@ -1,7 +1,12 @@
 import pymunk
 import math
+import random
 
 from pymunk import body
+from pymunk.vec2d import Vec2d
+
+from controller import *
+
 
 PROJECTILE = 1
 TARGET = 2
@@ -10,9 +15,11 @@ GROUND = 4
 
 class PhysicsSimulation:
 
-    def __init__(self):
+    def __init__(self, controller):
+        self.wind_force = Vec2d(0.0, 0.0)
         self.space = None
         #self.screenHeight = screen_height
+        self.controller = controller
         self.body = None
         self.shape = None
         self.reset_space()
@@ -20,10 +27,14 @@ class PhysicsSimulation:
         self.debug_shapes = []
 
 
+
     def reset_space(self):
         self.space = pymunk.Space()
         self.space.gravity = (0, -981) # pixels per second²
+        self.space.damping = 0.9
         self.debug_shapes = []
+        self.create_wind(self.wind_force)
+
 
         self.space.on_collision(
             PROJECTILE,
@@ -108,6 +119,28 @@ class PhysicsSimulation:
         self.space.add(body, shape)
         self.debug_shapes.append(shape)
 
+    def create_wind(self, WindForce):
+        if WindForce == Vec2d(0.0, 0.0):
+            x_force = float(random.randint(-70, 70) * 20)
+
+            y_force = float(random.randrange(-20,0) * 20)
+            #y_force = 0
+            self.wind_force = (x_force, y_force)
+            print("Wind Force:", str(self.wind_force))
+        else:
+            self.wind_force = WindForce
+            print("Wind Force ELSE:", str(self.wind_force))
+
+        self.controller.setWindForce(self.wind_force)
+
+    def apply_wind(self, wind_velocity:Vec2d, drag_coefficient, area):
+        rel_vel = self.body.velocity - wind_velocity
+
+        # force_mag = 0.5 * 1.225 * rel_vel.length_squared * drag_coefficient * area
+        # force_mag = 0.5 * 1.225 * rel_vel.length_squared * drag_coefficient * area
+        # force_vector = -rel_vel.normalized() * force_mag
+        self.body.apply_force_at_local_point(-rel_vel, (0, 0))
+
     def build_level(self, level_data):
 
         for box in level_data["collisionBoxes"]:
@@ -165,6 +198,7 @@ class PhysicsSimulation:
 
 
     def start(self, velocity, angle_deg):
+        self.create_wind(self.wind_force)
         angle = math.radians(angle_deg)
         print("Angle:", angle)
 
@@ -179,6 +213,7 @@ class PhysicsSimulation:
 
     def step(self, delta_time):
         self.space.step(delta_time)
+        self.apply_wind(self.wind_force, 0.47, 10)
         #print(self.body.position, delta_time)
         return self.body.position
 

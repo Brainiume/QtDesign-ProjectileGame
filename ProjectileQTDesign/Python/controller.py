@@ -1,6 +1,8 @@
+from socket import send_fds
+
 from PySide6.QtCore import QObject, Signal, Slot, Property, QTimer
 from PySide6.QtGui import QVector2DList
-from Tools.demo import vector
+from pymunk.vec2d import Vec2d
 
 from PhysicsEngine import *
 from LevelInitialisation import *
@@ -14,7 +16,8 @@ class GameController(QObject):
     gravityChanged = Signal()
     simulateEnabledChanged = Signal()
     debugBoxEnabledChanged = Signal()
-    projectilePositionChanged: Signal = Signal(float, float, float)
+    windChanged = Signal()
+    projectilePositionChanged: Signal = Signal(float, float, float, float)
     debugBoxesChanged = Signal(list)
 
     def __init__(self):
@@ -25,7 +28,8 @@ class GameController(QObject):
         self._gravity = -9.8
         self._simulateEnabled = True
         self._debugBoxEnabled = False
-        self.simulation = PhysicsSimulation()
+        self._windForce = (0.0, 0.0)
+        self.simulation = PhysicsSimulation(self)
         self.LevelMan = LevelInitialisation()
         self.timer = QTimer()
         self.timer.timeout.connect(self.updatePhysics)
@@ -75,6 +79,27 @@ class GameController(QObject):
         self._gravity = value
         print("gravity: " + str(value))
         self.gravityChanged.emit()
+
+    def setWindForce(self, force):
+        self._windForce = force
+        self.windChanged.emit()
+
+    def getWindAngle(self):
+        wind = self._windForce
+        angle = (math.degrees(math.atan2(wind[1], wind[0])) + 360) % 360
+        return angle
+
+    windAngle = Property(float, getWindAngle, notify=windChanged)
+
+    def getWindLength(self):
+        if self._windForce == (0.0, 0.0):
+            return 0.0
+
+        windResultant = math.hypot(self._windForce[0], self._windForce[1])
+        wind = round( windResultant / 100, 1)
+        return wind
+
+    windVelocity = Property(float, getWindLength, notify=windChanged)
 
     @Property(bool, notify=simulateEnabledChanged)
     def simulateEnabled(self):
@@ -149,4 +174,11 @@ class GameController(QObject):
         qml_x = pos.x - rocket_w / 2
         qml_y = self.simulation.screenHeight - pos.y - rocket_h / 2
 
-        self.projectilePositionChanged.emit(qml_x, qml_y, angle)
+        displayVelocity = round(float(vel.length) / 100 , 1)
+
+        self.projectilePositionChanged.emit(qml_x, qml_y, angle, displayVelocity)
+
+    def reset(self):
+        self.timer.stop()
+        self.setSimulateEnabled(True)
+        self.simulation.reset_space()
