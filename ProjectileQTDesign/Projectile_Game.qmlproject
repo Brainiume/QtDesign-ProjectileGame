@@ -23,7 +23,8 @@ Project {
             "Launch_3.ui.qml",
             "BarBusyIndicator.qml",
             "ControlsSwitch.ui.qml",
-            "MoreInfoDropdown.ui.qml"
+            "MoreInfoDropdown.ui.qml",
+            "Results.ui.qml"
 
         ]
     }

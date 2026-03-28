@@ -30,7 +30,6 @@ Rectangle {
         function onProjectilePositionChanged(NewX, NewY, NewRotation, Velocity) {
             rocket.x = NewX
             rocket.y = NewY
-            rocket.rotation = -NewRotation
             latestVelocity = Velocity
         }
 
@@ -92,8 +91,10 @@ Rectangle {
         MyRocket {
             id: rocket
             x: 127
-            y: 447
-            rotation: angleDial.value.toFixed(0) - 90
+            y: 460
+            transformOrigin: Item.Center
+            // Keep the sprite bound to controller state so reset cannot break the binding.
+            rotation: game.projectileRotation
 
             Behavior on rotation {
                 NumberAnimation {
@@ -102,6 +103,22 @@ Rectangle {
             }
         }
     }
+
+    Results {
+        id: results
+        x: 440
+        y: 153
+        width: 400
+        height: 262
+        // Show the existing results panel only after a successful target hit.
+        visible: game.resultsVisible
+        // Reuse the existing Results.ui.qml component and feed it live controller values.
+        flightTimeText: game.flightTime.toFixed(1) + "s"
+        maxHeightText: game.maxHeight.toFixed(1) + "m"
+        attemptsText: game.attempts.toString()
+        totalDisplacementText: game.totalDisplacement.toFixed(1) + "m"
+    }
+
     Item {
         id: bottomBar
 
@@ -679,6 +696,13 @@ Rectangle {
                 id: reloadButton1
                 x: 803
                 y: 62
+
+                Connections {
+                    target: reloadButton1
+                    function onClicked() {
+                        game.resetSimulation()
+                    }
+                }
             }
         }
 
@@ -689,6 +713,7 @@ Rectangle {
             blur: 9
         }
     }
+
     Item {
         id: debugLayer
         visible: game.debugBoxEnabled
@@ -841,7 +866,8 @@ Rectangle {
                         font.pixelSize: 20
                         font.weight: Font.Bold
                         horizontalAlignment: Text.AlignLeft
-                        text: "0"
+                        // Keep the existing score UI in sync with controller state.
+                        text: game.score.toString()
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -1355,6 +1381,3 @@ iNFO"
         id: __materialLibrary__
     }
 }
-
-
-

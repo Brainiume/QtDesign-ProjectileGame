@@ -47,6 +47,7 @@
         <file>Launch_3.ui.qml</file>
         <file>MoreInfoDropdown.ui.qml</file>
         <file>Projectile_Game.qmlproject</file>
+        <file>Results.ui.qml</file>
         <file>Screen_1.ui.qml</file>
     </qresource>
 </RCC>
