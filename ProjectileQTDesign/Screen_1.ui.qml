@@ -17,6 +17,11 @@ Rectangle {
     property var debugBoxes: []
     property real displayedVelocity: 0
     property real latestVelocity: 0
+    property bool moreInfoOpen: false
+
+    ListModel {
+        id: impactEffectModel
+    }
 
     Behavior on displayedVelocity {
         NumberAnimation {
@@ -37,6 +42,37 @@ Rectangle {
             console.log("Boxes received:", boxes.length)
             debugBoxes = boxes
         }
+
+        function onImpactEffectTriggered(effectType, centerX, centerY) {
+            // Keep dust subtle, but make the water splash fuller and easier to notice.
+            var burstCount = effectType === "splash" ? 14 : 6
+            impactEffectModel.clear()
+            for (var i = 0; i < burstCount; i++) {
+                impactEffectModel.append({
+                                             "effectType": effectType,
+                                             "effectX": centerX + (Math.random() - 0.5)
+                                                        * (effectType === "splash" ? 56 : 28),
+                                             "effectY": centerY + (Math.random() - 0.5)
+                                                        * (effectType === "splash" ? 18 : 10),
+                                             "driftX": (Math.random() - 0.5)
+                                                       * (effectType === "splash" ? 96 : 32),
+                                             "driftY": -8 - Math.random()
+                                                       * (effectType === "splash" ? 40 : 14),
+                                             "effectSize": effectType === "splash"
+                                                           ? 9 + Math.random() * 13
+                                                           : 6 + Math.random() * 8,
+                                             "effectColor": effectType === "splash"
+                                                            ? (Math.random() > 0.5 ? "#9fe8ff" : "#55cfff")
+                                                            : "#d8c099"
+                                         })
+            }
+        }
+
+        function onSimulateEnabledChanged() {
+            if (game.simulateEnabled) {
+                impactEffectModel.clear()
+            }
+        }
     }
 
     Timer {
@@ -45,6 +81,26 @@ Rectangle {
         running: true
 
         onTriggered: displayedVelocity = latestVelocity
+    }
+
+    HoverHelpTooltip {
+        id: controlHelpTooltip
+        // Sample the main scene so the tooltip keeps the same frosted style as the rest of the UI.
+        blurSourceItem: gameElements
+    }
+
+    WindCompassPopup {
+        id: windCompassPopup
+        // Reuse the same scene blur source so the compass popup matches the HUD.
+        blurSourceItem: gameElements
+        targetItem: windDirectionCard
+        windAngle: game.windAngle
+        arrowRotation: game.windCompassRotation
+        windSpeed: game.windVelocity
+        cardinalDirection: game.windCardinalDirection
+        cardinalShort: game.windCardinalShort
+        // Keep the popup open while the mouse is over the trigger card or the popup itself.
+        shown: windDirectionHover.containsMouse || hovered
     }
 
     Item {
@@ -75,17 +131,88 @@ Rectangle {
                 id: moreInfoDropdown
                 x: 974
                 y: 88
+                tooltipBlurSourceItem: gameElements
+                tooltipParentItem: screen
+                // Keep the existing dropdown instance and reveal it from the More Info button.
+                visible: screen.moreInfoOpen || opacity > 0.01
+                enabled: visible
+                opacity: screen.moreInfoOpen ? 1 : 0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 140
+                    }
+                }
             }
         }
 
         MyLevel1_1 {
-            id: level1_1
+            id: level1
             x: 0
             y: 381
+            // Show only the artwork that matches the active loaded level data.
+            visible: game.currentLevel === 1
             antialiasing: false
             smooth: false
             cache: true
             fillMode: Image.PreserveAspectCrop
+        }
+
+        MyLevel2 {
+            id: level2
+            x: 0
+            y: 185
+            // Show only the artwork that matches the active loaded level data.
+            visible: game.currentLevel === 2
+        }
+
+        Repeater {
+            model: impactEffectModel
+
+            Rectangle {
+                id: impactBurst
+                x: effectX - width / 2
+                y: effectY - height / 2
+                width: effectSize
+                height: effectSize
+                radius: width / 2
+                color: effectColor
+                opacity: effectType === "splash" ? 0.95 : 0.85
+                antialiasing: true
+                scale: effectType === "splash" ? 0.75 : 0.6
+
+                ParallelAnimation {
+                    running: true
+
+                    NumberAnimation {
+                        target: impactBurst
+                        property: "x"
+                        to: impactBurst.x + driftX
+                        duration: effectType === "splash" ? 620 : 420
+                    }
+
+                    NumberAnimation {
+                        target: impactBurst
+                        property: "y"
+                        to: impactBurst.y + driftY
+                        duration: effectType === "splash" ? 620 : 420
+                    }
+
+                    NumberAnimation {
+                        target: impactBurst
+                        property: "opacity"
+                        to: 0
+                        duration: effectType === "splash" ? 620 : 420
+                    }
+
+                    NumberAnimation {
+                        target: impactBurst
+                        property: "scale"
+                        to: effectType === "splash" ? 1.9 : 1.4
+                        duration: effectType === "splash" ? 620 : 420
+                    }
+                }
+            }
         }
 
         MyRocket {
@@ -106,12 +233,14 @@ Rectangle {
 
     Results {
         id: results
-        x: 440
-        y: 153
+        x: 339
+        y: 285
         width: 400
         height: 262
-        // Show the existing results panel only after a successful target hit.
+        // Show the results panel after either a win or a loss.
         visible: game.resultsVisible
+        tooltipBlurSourceItem: gameElements
+        tooltipParentItem: screen
         // Reuse the existing Results.ui.qml component and feed it live controller values.
         flightTimeText: game.flightTime.toFixed(1) + "s"
         maxHeightText: game.maxHeight.toFixed(1) + "m"
@@ -179,6 +308,12 @@ Rectangle {
 
                 color: "#212741"
                 radius: 9
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: angleTitleHover.containsMouse
+                }
 
                 Item {
                     id: sync
@@ -265,6 +400,29 @@ Rectangle {
                     cache: false
                     fillMode: Image.PreserveAspectFit
                 }
+
+                MouseArea {
+                    id: angleTitleHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: angleTitleHover
+
+                    // Hover help explains the dial in student-friendly language.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = angleTitle
+                        controlHelpTooltip.heading = "Angle"
+                        controlHelpTooltip.body = "Angle tells us how tilted the launch is. A larger angle sends the projectile towards the right, while a smaller angle sends it to the left. Turn the dial to choose the launch angle you want to test."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
             Rectangle {
                 id: velocityTitle
@@ -278,6 +436,12 @@ Rectangle {
                 clip: true
                 color: "#212741"
                 radius: 9
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: velocityTitleHover.containsMouse
+                }
 
                 Image {
                     id: titleBlue
@@ -364,9 +528,32 @@ Rectangle {
                         }
                     }
                 }
+
+                MouseArea {
+                    id: velocityTitleHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: velocityTitleHover
+
+                    // Hover help explains how the speed slider changes the launch.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = velocityTitle
+                        controlHelpTooltip.heading = "Velocity"
+                        controlHelpTooltip.body = "Velocity tells us how fast something is moving and the direction it is travelling in. Move the slider to change how fast the projectile launches."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
             Rectangle {
-                id: launch_4
+                id: gravityTitle
 
                 x: 377
                 y: 9
@@ -377,6 +564,12 @@ Rectangle {
                 clip: true
                 color: "#212741"
                 radius: 9
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: gravityTitleHover.containsMouse
+                }
 
                 Image {
                     id: titleYellow
@@ -463,11 +656,58 @@ Rectangle {
                         }
                     }
                 }
+
+                MouseArea {
+                    id: gravityTitleHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: gravityTitleHover
+
+                    // Hover help explains what gravity does to the projectile.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = gravityTitle
+                        controlHelpTooltip.heading = "Gravity"
+                        controlHelpTooltip.body = "Gravity is the force that pulls objects down toward the ground. Increase this to make the projectile fall faster, or lower it to let the projectile stay up longer."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
             Title {
-                id: launch_6
+                id: simulationcontrolsTitle
                 x: 562
                 y: 9
+                hovered: simulationControlsHover.containsMouse
+
+                MouseArea {
+                    id: simulationControlsHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: simulationControlsHover
+
+                    // Hover help gives a simple overview of the whole settings panel.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = simulationcontrolsTitle
+                        controlHelpTooltip.heading = "Simulation Controls"
+                        controlHelpTooltip.body = "Use this panel to set up your launch. Choose the angle, speed and gravity, then press Simulate to test your parameters. Press Reload to reset and try again."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
 
             BarBusyIndicator {
@@ -492,6 +732,48 @@ Rectangle {
                 from: 0
                 smooth: true
                 onValueChanged: game.angle = value
+
+                background: Rectangle {
+                    implicitWidth: 86
+                    implicitHeight: 86
+                    radius: width / 2
+                    color: "#15ffffff"
+                    border.color: "#f2ffffff"
+                    border.width: 4
+
+                    Rectangle {
+                        anchors.centerIn: parent
+                        width: parent.width - 24
+                        height: width
+                        radius: width / 2
+                        color: "#0affffff"
+                        border.color: "#55ffffff"
+                        border.width: 1
+                    }
+                }
+
+                handle: Rectangle {
+                    width: 18
+                    height: 18
+                    radius: 9
+                    color: "#ffffff"
+                    border.color: "#d8e3f0"
+                    border.width: 1
+                    antialiasing: true
+
+                    x: angleDial.width / 2 - width / 2
+                    y: angleDial.height / 2 - height / 2
+                    transform: [
+                        Translate {
+                            y: -angleDial.height * 0.34
+                        },
+                        Rotation {
+                            angle: angleDial.angle
+                            origin.x: 9
+                            origin.y: 9
+                        }
+                    ]
+                }
             }
 
             Slider {
@@ -712,6 +994,70 @@ Rectangle {
             blurEnabled: true
             blur: 9
         }
+
+        Text {
+            id: velocityTextboxRange0
+            x: 391
+            y: 143
+            width: 53
+            height: 21
+            color: "#ffffff"
+            text: "Slower"
+            font.pixelSize: 15
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            textFormat: Text.PlainText
+            font.weight: Font.Normal
+            font.family: "Interstate"
+        }
+
+        Text {
+            id: velocityTextboxRange1
+            x: 507
+            y: 143
+            width: 53
+            height: 21
+            color: "#ffffff"
+            text: "Faster"
+            font.pixelSize: 15
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            textFormat: Text.PlainText
+            font.weight: Font.Normal
+            font.family: "Interstate"
+        }
+
+        Text {
+            id: gravityTextboxRange2
+            x: 575
+            y: 143
+            width: 53
+            height: 21
+            color: "#ffffff"
+            text: "Less"
+            font.pixelSize: 15
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            textFormat: Text.PlainText
+            font.weight: Font.Normal
+            font.family: "Interstate"
+        }
+
+        Text {
+            id: gravityTextboxRange3
+            x: 691
+            y: 143
+            width: 53
+            height: 21
+            color: "#ffffff"
+            text: "More"
+            font.pixelSize: 15
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            textFormat: Text.PlainText
+            font.weight: Font.Normal
+            font.family: "Interstate"
+        }
     }
 
     Item {
@@ -766,6 +1112,12 @@ Rectangle {
                 color: "#e5212741"
                 radius: 10
 
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: scoreLevelHover.containsMouse
+                }
+
                 Item {
                     id: level
 
@@ -796,7 +1148,7 @@ Rectangle {
                         verticalAlignment: Text.AlignTop
                     }
                     Text {
-                        id: level_1
+                        id: levelCounter
 
                         x: 1
                         y: 21
@@ -809,7 +1161,7 @@ Rectangle {
                         font.pixelSize: 20
                         font.weight: Font.Bold
                         horizontalAlignment: Text.AlignLeft
-                        text: "1"
+                        text: game.currentLevel.toString()
                         textFormat: Text.PlainText
                         verticalAlignment: Text.AlignVCenter
                     }
@@ -872,6 +1224,13 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
+
+                MouseArea {
+                    id: scoreLevelHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
             }
         }
         Item {
@@ -898,6 +1257,12 @@ Rectangle {
                 clip: true
                 color: "#e6212741"
                 radius: 10
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: currentVelocityHover.containsMouse
+                }
 
                 Item {
                     id: bolt
@@ -987,6 +1352,29 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
+
+                MouseArea {
+                    id: currentVelocityHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: currentVelocityHover
+
+                    // Explain that this card shows the live speed during flight.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = currentVelocity
+                        controlHelpTooltip.heading = "Current Velocity"
+                        controlHelpTooltip.body = "This shows how fast the projectile is moving currently. Watch this number during the simulation to see how the speed changes as the projectile travels."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
             Rectangle {
                 id: launch_8
@@ -1000,6 +1388,12 @@ Rectangle {
                 clip: true
                 color: "#e5212741"
                 radius: 10
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: launchSummaryHover.containsMouse
+                }
 
                 Item {
                     id: target
@@ -1090,6 +1484,29 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
+
+                MouseArea {
+                    id: launchSummaryHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: launchSummaryHover
+
+                    // Explain that this card is a quick summary of the chosen launch setup.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = launch_8
+                        controlHelpTooltip.heading = "Launch"
+                        controlHelpTooltip.body = "This shows the launch parameters you input. It combines the angle and the starting speed (velocity) so you can quickly check your setup before you simulate."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
             Rectangle {
                 id: gravity
@@ -1103,6 +1520,12 @@ Rectangle {
                 clip: true
                 color: "#e5212741"
                 radius: 10
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: gravityCardHover.containsMouse
+                }
 
                 Item {
                     id: globe
@@ -1173,7 +1596,7 @@ Rectangle {
                         verticalAlignment: Text.AlignTop
                     }
                     Text {
-                        id: gravity_1
+                        id: wind
 
                         x: 1
                         y: 21
@@ -1191,16 +1614,46 @@ Rectangle {
                         verticalAlignment: Text.AlignVCenter
                     }
                 }
+
+                MouseArea {
+                    id: gravityCardHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: gravityCardHover
+
+                    // Explain that this card shows the downward pull used in the model.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = gravity
+                        controlHelpTooltip.heading = "Gravity"
+                        controlHelpTooltip.body = "This shows the gravity setting being used in the simulation. Stronger gravity pulls the projectile down faster, so the path bends downward sooner."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
             }
 
             Rectangle {
                 id: gravity1
                 x: 527
                 y: 16
-                width: 194
+                width: 155
                 height: 58
                 color: "#e5212741"
                 radius: 10
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    hovered: windCardHover.containsMouse
+                }
+
                 Item {
                     id: globe1
                     x: 15
@@ -1266,12 +1719,14 @@ Rectangle {
 
                 VectorImage {
                     id: image2
-                    x: 138
+                    x: 112
                     y: 11
                     width: 32
                     height: 33
                     source: "assets/Arrow.svg"
-                    rotation: game.windAngle
+                    // Use the compass-adjusted rotation so the arrow and text
+                    // both describe the same wind direction.
+                    rotation: game.windCompassRotation
                     preferredRendererType: VectorImage.CurveRenderer
                     smooth: true
                     antialiasing: true
@@ -1279,6 +1734,85 @@ Rectangle {
                 }
 
                 clip: true
+
+                MouseArea {
+                    id: windCardHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: windCardHover
+
+                    // Explain how wind direction and strength affect the projectile.
+                    function onEntered() {
+                        controlHelpTooltip.targetItem = gravity1
+                        controlHelpTooltip.heading = "Wind"
+                        controlHelpTooltip.body = "Wind is moving air that can push the projectile sideways or change how it travels. Read the number to see the wind strength and use the arrow to see which way the wind is blowing."
+                        controlHelpTooltip.shown = true
+                    }
+
+                    function onExited() {
+                        controlHelpTooltip.shown = false
+                    }
+                }
+            }
+
+            Rectangle {
+                id: windDirectionCard
+                x: 690
+                y: 16
+                width: 48
+                height: 58
+                color: "#e5212741"
+                radius: 10
+                clip: true
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    // Keep the teaching card highlighted while its popup is open.
+                    hovered: windDirectionHover.containsMouse || windCompassPopup.hovered
+                }
+
+                Text {
+                    id: windDirectionTitle
+                    x: 0
+                    y: 11
+                    width: parent.width
+                    height: 14
+                    color: "#ffffff"
+                    text: "DIR"
+                    font.family: "Interstate"
+                    font.pixelSize: 11
+                    font.weight: Font.Bold
+                    font.capitalization: Font.AllUppercase
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                Text {
+                    id: windDirectionValue
+                    x: 0
+                    y: 27
+                    width: parent.width
+                    height: 18
+                    color: "#92ff92"
+                    text: game.windCardinalShort
+                    font.family: "Interstate"
+                    font.pixelSize: 12
+                    font.weight: Font.Bold
+                    horizontalAlignment: Text.AlignHCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                MouseArea {
+                    id: windDirectionHover
+                    anchors.fill: parent
+                    acceptedButtons: Qt.NoButton
+                    hoverEnabled: true
+                }
             }
         }
         Item {
@@ -1292,7 +1826,7 @@ Rectangle {
             clip: false
 
             Rectangle {
-                id: scoreLevel_1
+                id: moreInfo
 
                 x: 227
                 y: 16
@@ -1303,6 +1837,13 @@ Rectangle {
                 clip: true
                 color: "#e5212741"
                 radius: 10
+
+                CardHoverEffect {
+                    anchors.fill: parent
+                    cornerRadius: parent.radius
+                    // Show an active state while the helper dropdown is open.
+                    hovered: moreInfoHover.containsMouse || screen.moreInfoOpen
+                }
 
                 Item {
                     id: iNFO
@@ -1373,6 +1914,21 @@ iNFO"
                         verticalAlignment: Text.AlignTop
                     }
                 }
+
+                MouseArea {
+                    id: moreInfoHover
+                    anchors.fill: parent
+                    hoverEnabled: true
+                }
+
+                Connections {
+                    target: moreInfoHover
+
+                    // Toggle the dropdown that contains the Debug Boxes switch.
+                    function onClicked() {
+                        screen.moreInfoOpen = !screen.moreInfoOpen
+                    }
+                }
             }
         }
     }
@@ -1380,4 +1936,59 @@ iNFO"
     Item {
         id: __materialLibrary__
     }
+
+    Item {
+        id: winloseContainer
+        visible: game.winVisible || game.loseVisible
+
+        Win {
+            id: win
+            x: 726
+            y: 331
+            visible: game.winVisible
+            // Feed the existing win card a controller-built success message.
+            bodyText: game.winMessage
+        }
+
+        Lose {
+            id: lose
+            x: 726
+            y: 331
+            visible: game.loseVisible
+            // Feed the existing lose card a controller-built retry hint.
+            bodyText: game.loseMessage
+        }
+
+        ControlsButton {
+            id: controlsButton
+            x: 786
+            y: 486
+            visible: game.winVisible || game.loseVisible
+
+            buttonTextPressed: "Continue"
+            buttonTextDisabled: "Continue"
+            buttonText: "Continue"
+        }
+
+        Connections {
+            target: controlsButton
+
+            // Reuse the same Continue button for win and lose, then let the
+            // controller choose the correct follow-up action for the attempt.
+            function onClicked() {
+                if (game.winVisible) {
+                    game.continueAfterWin()
+                } else if (game.loseVisible) {
+                    game.continueAfterLose()
+                }
+            }
+        }
+    }
 }
+
+/*##^##
+Designer {
+    D{i:0}D{i:12;invisible:true}D{i:30;invisible:true}
+}
+##^##*/
+

@@ -12,6 +12,19 @@ Item {
     property string maxHeightText: "0.0m"
     property string attemptsText: "0"
     property string totalDisplacementText: "0.0m"
+    property Item tooltipBlurSourceItem: null
+    property Item tooltipParentItem: null
+
+    HoverHelpTooltip {
+        id: resultsTooltip
+        parent: frame_2.tooltipParentItem ? frame_2.tooltipParentItem : frame_2
+        z: 10
+        // Reuse the same frosted tooltip style as the rest of the game UI.
+        blurSourceItem: frame_2.tooltipBlurSourceItem
+        // Keep results help beside the card so it does not cover the win/lose panel.
+        placement: "left"
+        maxWidth: 300
+    }
 
     Rectangle {
         id: launch
@@ -245,6 +258,29 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                 }
             }
+
+            MouseArea {
+                id: flightTimeHover
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                hoverEnabled: true
+            }
+
+            Connections {
+                target: flightTimeHover
+
+                // Explain what the time result means and how to improve it.
+                function onEntered() {
+                    resultsTooltip.targetItem = launch_2
+                    resultsTooltip.heading = "Flight Time"
+                    resultsTooltip.body = "Flight time is how long your projectile stayed in motion before the result was decided. Try changing the angle or velocity to keep it travelling for longer or to reach the target faster."
+                    resultsTooltip.shown = true
+                }
+
+                function onExited() {
+                    resultsTooltip.shown = false
+                }
+            }
         }
         Rectangle {
             id: launch_3
@@ -359,6 +395,29 @@ Item {
                     text: frame_2.maxHeightText
                     textFormat: Text.PlainText
                     verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            MouseArea {
+                id: maxHeightHover
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                hoverEnabled: true
+            }
+
+            Connections {
+                target: maxHeightHover
+
+                // Explain the tallest point of the shot in beginner-friendly wording.
+                function onEntered() {
+                    resultsTooltip.targetItem = launch_3
+                    resultsTooltip.heading = "Max Height"
+                    resultsTooltip.body = "Max height is the highest point your projectile reached. Increase the launch angle if you want more upward travel, or lower it if you want a flatter path."
+                    resultsTooltip.shown = true
+                }
+
+                function onExited() {
+                    resultsTooltip.shown = false
                 }
             }
         }
@@ -477,6 +536,29 @@ Item {
                     verticalAlignment: Text.AlignVCenter
                 }
             }
+
+            MouseArea {
+                id: attemptsHover
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                hoverEnabled: true
+            }
+
+            Connections {
+                target: attemptsHover
+
+                // Explain that attempts count how many launches have been tried.
+                function onEntered() {
+                    resultsTooltip.targetItem = launch_4
+                    resultsTooltip.heading = "Attempts"
+                    resultsTooltip.body = "Attempts shows how many launches you have tried in this session. Use it to see how many tests it took to find a working shot."
+                    resultsTooltip.shown = true
+                }
+
+                function onExited() {
+                    resultsTooltip.shown = false
+                }
+            }
         }
         Rectangle {
             id: launch_5
@@ -591,6 +673,29 @@ Item {
                     text: frame_2.totalDisplacementText
                     textFormat: Text.PlainText
                     verticalAlignment: Text.AlignVCenter
+                }
+            }
+
+            MouseArea {
+                id: totalDisplacementHover
+                anchors.fill: parent
+                acceptedButtons: Qt.NoButton
+                hoverEnabled: true
+            }
+
+            Connections {
+                target: totalDisplacementHover
+
+                // Explain how far the projectile travelled across the level.
+                function onEntered() {
+                    resultsTooltip.targetItem = launch_5
+                    resultsTooltip.heading = "Total Displacement"
+                    resultsTooltip.body = "Total displacement shows how far your projectile travelled across the level from where it started. Adjust the launch controls to change how much ground it covers."
+                    resultsTooltip.shown = true
+                }
+
+                function onExited() {
+                    resultsTooltip.shown = false
                 }
             }
         }

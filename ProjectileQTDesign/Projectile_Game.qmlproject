@@ -24,7 +24,10 @@ Project {
             "BarBusyIndicator.qml",
             "ControlsSwitch.ui.qml",
             "MoreInfoDropdown.ui.qml",
-            "Results.ui.qml"
+            "Results.ui.qml",
+            "HoverHelpTooltip.qml",
+            "Win.ui.qml",
+            "Lose.ui.qml"
 
         ]
     }

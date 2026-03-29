@@ -14,11 +14,19 @@ PROJECTILE_WIDTH = 57.0
 PROJECTILE_HEIGHT = 142.0
 PROJECTILE_START_X = 127.0
 PROJECTILE_START_Y = 460.0
+LOW_SPEED_SAFE_ALIGNMENT_THRESHOLD = 120.0
+MIN_ALIGNMENT_SPEED = 5.0
 
 class PhysicsSimulation:
 
     def __init__(self, controller):
         self.wind_force = Vec2d(0.0, 0.0)
+        self.wind_profile = {
+            "horizontalMin": -70,
+            "horizontalMax": 70,
+            "verticalMin": -20,
+            "verticalMax": 0,
+        }
         self.space = None
         #self.screenHeight = screen_height
         self.controller = controller
@@ -183,9 +191,13 @@ class PhysicsSimulation:
 
     def create_wind(self, WindForce):
         if WindForce == Vec2d(0.0, 0.0):
-            x_force = float(random.randint(-70, 70) * 20)
+            horizontal_min = int(self.wind_profile.get("horizontalMin", -70))
+            horizontal_max = int(self.wind_profile.get("horizontalMax", 70))
+            vertical_min = int(self.wind_profile.get("verticalMin", -20))
+            vertical_max = int(self.wind_profile.get("verticalMax", 0))
 
-            y_force = float(random.randrange(-20,0) * 20)
+            x_force = float(random.randint(horizontal_min, horizontal_max) * 20)
+            y_force = float(random.randrange(vertical_min, vertical_max) * 20)
             #y_force = 0
             self.wind_force = (x_force, y_force)
             print("Wind Force:", str(self.wind_force))
@@ -194,6 +206,12 @@ class PhysicsSimulation:
             print("Wind Force ELSE:", str(self.wind_force))
 
         self.controller.setWindForce(self.wind_force)
+
+    def set_wind_profile(self, wind_profile, regenerate_force=False):
+        # Allow the controller to swap wind difficulty when the level changes.
+        self.wind_profile = dict(wind_profile) if wind_profile else dict(self.wind_profile)
+        if regenerate_force:
+            self.wind_force = Vec2d(0.0, 0.0)
 
     def apply_wind(self, wind_velocity:Vec2d, drag_coefficient, area):
         rel_vel = self.body.velocity - wind_velocity
@@ -216,10 +234,28 @@ class PhysicsSimulation:
     def dial_angle_to_body_angle(self, angle_deg):
         return math.radians(90.0 - angle_deg)
 
+    def get_nearest_equivalent_angle(self, target_angle, reference_angle):
+        # atan2() wraps into [-pi, pi], so choose the equivalent rotation that
+        # stays closest to the current body angle to avoid left/right snapping.
+        angle_delta = target_angle - reference_angle
+        wrapped_delta = (angle_delta + math.pi) % (2.0 * math.pi) - math.pi
+        return reference_angle + wrapped_delta
+
     def get_projectile_qml_rotation(self):
         if self.body is None:
             return self.initial_state["projectile_angle_deg"] - 90.0
         return -math.degrees(self.body.angle)
+
+    def get_safe_body_angle(self, velocity):
+        velocity_x = float(velocity.x)
+        velocity_y = float(velocity.y)
+
+        # At awkward low speeds, tiny collision jitters can make atan2() jump.
+        # Snap to a simple compass-like direction instead of trusting the noise.
+        if abs(velocity_y) >= abs(velocity_x):
+            return 0.0 if velocity_y >= 0.0 else math.pi
+
+        return -math.pi / 2.0 if velocity_x >= 0.0 else math.pi / 2.0
 
     def get_projectile_qml_position(self):
         if self.body is None:
@@ -294,11 +330,24 @@ class PhysicsSimulation:
             return
 
         velocity = self.body.velocity
-        if velocity.length == 0:
+        if velocity.length <= MIN_ALIGNMENT_SPEED:
+            # Once the body is almost still, fall back to a stable nose-down pose
+            # instead of preserving any odd collision angle from the final bounce.
+            target_angle = math.pi
+            self.body.angle = self.get_nearest_equivalent_angle(target_angle, self.body.angle)
+            self.body.angular_velocity = 0.0
             return
 
-        # Keep the body and sprite aligned to the flight direction.
-        self.body.angle = math.atan2(velocity.y, velocity.x) - math.pi / 2
+        if velocity.length <= LOW_SPEED_SAFE_ALIGNMENT_THRESHOLD:
+            # Low-speed motion gets a stable dominant-axis direction rather than
+            # atan2() so awkward downward landings do not snap left/right.
+            target_angle = self.get_safe_body_angle(velocity)
+        else:
+            # Keep the body and sprite aligned to the flight direction, but keep the
+            # angle continuous so fast motion does not flip across 180/-180.
+            target_angle = math.atan2(velocity.y, velocity.x) - math.pi / 2
+
+        self.body.angle = self.get_nearest_equivalent_angle(target_angle, self.body.angle)
         self.body.angular_velocity = 0.0
 
 

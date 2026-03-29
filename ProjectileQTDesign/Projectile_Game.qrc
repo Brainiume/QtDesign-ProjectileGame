@@ -40,14 +40,17 @@
         <file>DesignTokens/DesignTokens.qmlproject</file>
         <file>fonts/inter-semibold.ttf</file>
         <file>fonts/InterstateRegular.otf</file>
+        <file>HoverHelpTooltip.qml</file>
         <file>Image_2.ui.qml</file>
         <file>Launch.ui.qml</file>
         <file>Launch_1.ui.qml</file>
         <file>Launch_2.ui.qml</file>
         <file>Launch_3.ui.qml</file>
+        <file>Lose.ui.qml</file>
         <file>MoreInfoDropdown.ui.qml</file>
         <file>Projectile_Game.qmlproject</file>
         <file>Results.ui.qml</file>
         <file>Screen_1.ui.qml</file>
+        <file>Win.ui.qml</file>
     </qresource>
 </RCC>
